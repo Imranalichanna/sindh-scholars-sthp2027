@@ -37,6 +37,7 @@ Edit public/config.js and replace:
 - https://YOUR_PROJECT_REF.supabase.co with the project URL
 - YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY with the publishable/anon key
 - whatsappCommunityUrl with your academy's HTTPS community/channel link
+- contactEmail with a monitored academy email address (leave blank until one is available)
 
 The publishable/anon key is designed to be public. It is only safe when RLS, table grants, and storage policies are configured correctly. Never place a service-role key in this file.
 
@@ -123,6 +124,12 @@ For Edge Function type checking, install Deno and run:
 - deno check supabase/functions/admin-results/index.ts
 - deno check supabase/functions/admin-content/index.ts
 - deno check supabase/functions/material-url/index.ts
+
+For database integration tests, start your local Supabase stack and run:
+- supabase start
+- supabase test db
+
+The SQL tests cover key RLS grants and atomic scoring/duplicate submission behavior. They have not been executed against your live project from this environment.
 
 Then manually verify each item:
 - Register, confirm email if enabled, log in, log out, and refresh the page.
