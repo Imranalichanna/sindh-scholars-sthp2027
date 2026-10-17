@@ -25,7 +25,7 @@ Deno.serve(async req=>{
   if(b.action==="list") {
    const [categories,tests,materials,announcements]=await Promise.all([
     db.from("exam_categories").select("id,name,slug,description,sort_order,is_published").order("sort_order"),
-    db.from("tests").select("id,title,slug,description,category_id,duration_seconds,total_marks,max_attempts,negative_marking,negative_penalty,starts_at,closes_at,status,result_policy,results_released").order("created_at",{ascending:false}),
+    db.from("tests").select("id,title,slug,description,category_id,duration_seconds,total_marks,max_attempts,negative_marking,negative_penalty,starts_at,closes_at,status,result_policy,results_released,public_leaderboard_enabled").order("created_at",{ascending:false}),
     db.from("study_materials").select("id,title,description,category_id,subject,resource_type,storage_path,external_url,is_published,created_at").order("created_at",{ascending:false}),
     db.from("announcements").select("id,title,body,is_published,publish_at,expires_at").order("created_at",{ascending:false})
    ]);
@@ -106,6 +106,14 @@ Deno.serve(async req=>{
    if(publishError)return out({error:"Could not approve this public result."},500,origin);
    await db.from("test_attempts").update({result_status:"approved"}).eq("id",attempt.id);
    await audit("approve_public_result","test_attempt",attempt.id,{test_id:attempt.test_id});
+   return out({success:true},200,origin);
+  }
+  if(b.action==="setLeaderboard") {
+   if(role.role!=="super_admin")return out({error:"Only a Super Admin can change public leaderboard settings."},403,origin);
+   if(!isUuid(b.test_id)||typeof b.enabled!=="boolean")return out({error:"Invalid leaderboard setting."},400,origin);
+   const {error}=await db.from("tests").update({public_leaderboard_enabled:b.enabled,updated_at:new Date().toISOString()}).eq("id",b.test_id);
+   if(error)return out({error:"Could not update the public leaderboard setting."},400,origin);
+   await audit(b.enabled?"enable_public_leaderboard":"disable_public_leaderboard","test",b.test_id,{});
    return out({success:true},200,origin);
   }
   if(b.action==="setResultRelease") {
