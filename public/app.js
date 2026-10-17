@@ -126,7 +126,7 @@
     document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.mode === state.mode));
   }
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => { state.mode = t.dataset.mode; syncAuthMode(); }));
-  $("#open-auth").addEventListener("click", () => state.user ? toast("You are signed in.") : openAuth("login"));
+  $("#open-auth").addEventListener("click", () => state.user ? showStudentDashboard() : openAuth("login"));
   $("#auth-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!client) { $("#auth-message").textContent = "Supabase is not configured. Add your project URL and public key in config.js."; return; }
@@ -146,6 +146,31 @@
     } catch (e) { $("#auth-message").textContent = safeText(e.message, "Authentication failed. Please try again."); }
     finally { submit.disabled = false; syncAuthMode(); }
   });
+  async function showStudentDashboard() {
+    if (!client || !state.user) return openAuth("login");
+    let dialog = $("#student-dashboard-dialog");
+    if (!dialog) {
+      dialog = document.createElement("dialog"); dialog.id = "student-dashboard-dialog"; dialog.className = "auth-dialog dashboard-dialog";
+      dialog.innerHTML = '<form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="Close dashboard">×</button></form><span class="eyebrow">STUDENT DASHBOARD</span><h2>My learning</h2><p class="muted">Your saved test attempts and result publication status.</p><div id="student-results-list"><p class="muted">Loading your history…</p></div><button id="student-signout" class="btn btn-ghost btn-full" type="button">Sign out</button>';
+      document.body.append(dialog);
+      dialog.querySelector("#student-signout").addEventListener("click", async () => { await client.auth.signOut(); dialog.close(); state.user = null; updateAuthButton(); renderTests(); toast("You have signed out."); });
+    }
+    const list = dialog.querySelector("#student-results-list"); list.textContent = "Loading your history…";
+    dialog.showModal();
+    try {
+      const { data, error } = await client.functions.invoke("my-results", { method: "GET" });
+      if (error || !Array.isArray(data?.results)) throw new Error(data?.error || error?.message || "History is unavailable.");
+      list.replaceChildren();
+      if (!data.results.length) { const p=document.createElement("p");p.className="empty-card";p.textContent="You have not submitted any tests yet. Explore the available practice tests to begin.";list.append(p);return; }
+      data.results.forEach(r => {
+        const card=document.createElement("article");card.className="student-result-card";
+        const title=document.createElement("h3");title.textContent=r.testTitle;
+        const status=document.createElement("p");status.className="muted";status.textContent="Attempt "+r.attemptNumber+" · "+r.status+" · "+formatDate(r.submittedAt);
+        const score=document.createElement("p");score.className="student-result-score";score.textContent=r.resultVisible ? (r.result.score+" / marks · "+r.result.percentage+"%") : "Result hidden until authorized release";
+        card.append(title,status,score);list.append(card);
+      });
+    } catch(e) { list.textContent = safeText(e.message,"Could not load your history. Please try again."); }
+  }
   function updateAuthButton() { $("#open-auth").textContent = state.user ? "Signed in" : "Student login"; $("#open-auth").title = state.user ? "Signed in student account" : "Student login"; }
   async function startTest(test) {
     if (!client || !state.user) return openAuth("login");
@@ -237,6 +262,6 @@
     client.auth.onAuthStateChange((_event, session) => { state.user = session?.user || null; updateAuthButton(); renderTests(); });
   }
   // Small exam layout rules are scoped here to keep the main stylesheet easy to scan.
-  const examStyle = document.createElement("style"); examStyle.textContent = '.exam-dialog{width:min(860px,calc(100% - 24px));max-height:92vh;overflow:auto}.exam-head,.exam-footer{display:flex;align-items:center;justify-content:space-between;gap:16px}.exam-head h2{font-size:1.45rem}.question-nav{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 24px}.question-jump{border:1px solid var(--line);background:#fff;border-radius:8px;width:36px;height:36px;color:var(--ink)}.question-jump.answered{background:var(--mint);border-color:#80b69a;color:var(--green);font-weight:800}.exam-question{border:1px solid var(--line);border-radius:14px;margin:14px 0;padding:18px}.exam-question legend{font-weight:700;padding:0 5px}.option-label{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:8px;cursor:pointer}.option-label:hover{background:var(--bg)}.option-label input{margin-top:5px}.exam-footer{position:sticky;bottom:0;background:#fff;padding:14px 0 0;border-top:1px solid var(--line);margin-top:16px}'; document.head.append(examStyle);
+  const examStyle = document.createElement("style"); examStyle.textContent = '.dashboard-dialog{width:min(620px,calc(100% - 24px));max-height:88vh;overflow:auto}.student-result-card{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}.student-result-card h3{margin:0 0 4px}.student-result-card p{margin:5px 0}.student-result-score{font-weight:800;color:var(--green)}.exam-dialog{width:min(860px,calc(100% - 24px));max-height:92vh;overflow:auto}.exam-head,.exam-footer{display:flex;align-items:center;justify-content:space-between;gap:16px}.exam-head h2{font-size:1.45rem}.question-nav{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 24px}.question-jump{border:1px solid var(--line);background:#fff;border-radius:8px;width:36px;height:36px;color:var(--ink)}.question-jump.answered{background:var(--mint);border-color:#80b69a;color:var(--green);font-weight:800}.exam-question{border:1px solid var(--line);border-radius:14px;margin:14px 0;padding:18px}.exam-question legend{font-weight:700;padding:0 5px}.option-label{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:8px;cursor:pointer}.option-label:hover{background:var(--bg)}.option-label input{margin-top:5px}.exam-footer{position:sticky;bottom:0;background:#fff;padding:14px 0 0;border-top:1px solid var(--line);margin-top:16px}'; document.head.append(examStyle);
   initAuth().then(loadPublicContent).catch(() => { renderTests(); renderMaterials(); });
 })();
