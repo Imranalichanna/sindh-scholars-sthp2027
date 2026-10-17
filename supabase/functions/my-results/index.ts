@@ -17,7 +17,7 @@ Deno.serve(async req => {
   if(error)return out({error:"Could not load your test history."},500,origin);
   const results=(rows??[]).map(a=>{
     const t=Array.isArray(a.tests)?a.tests[0]:a.tests;
-    const visible=!!t?.results_released && (t?.result_policy==="personal_result" || t?.result_policy==="public_results_after_approval");
+    const visible=!!t?.results_released;
     return {attemptId:a.id,testId:a.test_id,testTitle:t?.title??"Practice test",attemptNumber:a.attempt_number,status:a.status,startedAt:a.started_at,submittedAt:a.submitted_at,durationSeconds:a.duration_seconds,resultVisible:visible,result:visible?{score:a.score,percentage:a.percentage,correctCount:a.correct_count,incorrectCount:a.incorrect_count,unansweredCount:a.unanswered_count}:null};
   });
   return out({results},200,origin);
