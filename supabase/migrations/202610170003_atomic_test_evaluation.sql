@@ -80,17 +80,17 @@ begin
     if selected_idx is null then
       unanswered_total := unanswered_total + 1;
       insert into public.submitted_answers(attempt_id,question_id,selected_option_index,is_correct,awarded_marks)
-      values (a.id,q.id,null,false,0);
+      values (a.id,q.id,null,false,0) on conflict (attempt_id,question_id) do update set selected_option_index = null, is_correct = false, awarded_marks = 0;
     elsif selected_idx = correct_idx then
       correct_total := correct_total + 1;
       earned := earned + q.marks;
       insert into public.submitted_answers(attempt_id,question_id,selected_option_index,is_correct,awarded_marks)
-      values (a.id,q.id,selected_idx,true,q.marks);
+      values (a.id,q.id,selected_idx,true,q.marks) on conflict (attempt_id,question_id) do update set selected_option_index = excluded.selected_option_index, is_correct = true, awarded_marks = excluded.awarded_marks;
     else
       incorrect_total := incorrect_total + 1;
       if t.negative_marking then earned := earned - t.negative_penalty; end if;
       insert into public.submitted_answers(attempt_id,question_id,selected_option_index,is_correct,awarded_marks)
-      values (a.id,q.id,selected_idx,false,case when t.negative_marking then -t.negative_penalty else 0 end);
+      values (a.id,q.id,selected_idx,false,case when t.negative_marking then -t.negative_penalty else 0 end) on conflict (attempt_id,question_id) do update set selected_option_index = excluded.selected_option_index, is_correct = false, awarded_marks = excluded.awarded_marks;
     end if;
   end loop;
 
