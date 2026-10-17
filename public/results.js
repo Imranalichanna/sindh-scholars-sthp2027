@@ -10,7 +10,7 @@ function render(){
  if(!shown.length){const empty=document.createElement("div");empty.className="empty-card";empty.textContent="No publicly approved results are available for this selection.";root.append(empty);$("#results-note").textContent="Only authorized, released public result entries appear here.";return}
  shown.forEach((r,i)=>{
   const card=document.createElement("article");card.className="test-card";
-  const rank=document.createElement("span");rank.className="pill";rank.textContent="Rank "+(i+1);
+  const rank=document.createElement("span");rank.className="pill";rank.textContent=testId?"Rank "+(rows.filter(x=>x.test_id===r.test_id).findIndex(x=>x.id===r.id)+1):"Approved result";
   const name=document.createElement("h3");name.textContent=r.display_name;
   const test=document.createElement("p");const nested=Array.isArray(r.tests)?r.tests[0]:r.tests;test.textContent=nested?.title||"Practice test";
   const score=document.createElement("div");score.className="test-meta";score.textContent=Number(r.score).toFixed(2)+" marks · "+Number(r.percentage).toFixed(2)+"%";
