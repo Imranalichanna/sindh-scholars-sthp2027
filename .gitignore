@@ -1,0 +1,17 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+supabase/.temp/
+.supabase/
+# Dependencies and build outputs
+node_modules/
+dist/
+coverage/
+.DS_Store
+Thumbs.db
+# Keep private answer-key exports out of version control
+*.answer-key.json
+private-data/
