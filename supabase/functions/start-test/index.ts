@@ -32,13 +32,13 @@ Deno.serve(async (req) => {
 
   const { data: profile } = await db.from("profiles").select("account_status").eq("id", userData.user.id).maybeSingle();
   if (!profile || profile.account_status !== "active") return json({ error: "Your account is unavailable for testing." }, 403, origin);
-  const { data: test, error: testError } = await db.from("tests").select("id,title,description,duration_seconds,total_marks,max_attempts,starts_at,closes_at,status,question_order_randomized,option_order_randomized").eq("id", body.testId).eq("status", "published").maybeSingle();
+  const { data: test, error: testError } = await db.from("tests").select("id,title,description,duration_seconds,total_marks,max_attempts,starts_at,closes_at,status,question_order_randomized,option_order_randomized").eq("id", body.testId).maybeSingle();
   if (testError || !test) return json({ error: "This test is not available." }, 404, origin);
   const now = Date.now();
-  if (test.starts_at && now < Date.parse(test.starts_at)) return json({ error: "This test has not opened yet." }, 403, origin);
-  if (test.closes_at && now >= Date.parse(test.closes_at)) return json({ error: "The test closing time has passed." }, 403, origin);
-
   const { data: active } = await db.from("test_attempts").select("id,attempt_number,started_at").eq("test_id", test.id).eq("user_id", userData.user.id).eq("status", "in_progress").order("started_at", { ascending: false }).limit(1).maybeSingle();
+  if (test.status !== "published" && !active) return json({ error: "This test is not available." }, 404, origin);
+  if (!active && test.starts_at && now < Date.parse(test.starts_at)) return json({ error: "This test has not opened yet." }, 403, origin);
+  if (!active && test.closes_at && now >= Date.parse(test.closes_at)) return json({ error: "The test closing time has passed." }, 403, origin);
   let attemptId = active?.id as string | undefined;
   let startedAt = active?.started_at as string | undefined;
   if (!active) {
