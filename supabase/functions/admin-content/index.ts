@@ -15,6 +15,8 @@ Deno.serve(async req=>{
  const {data:ud,error:ue}=await auth.auth.getUser();
  if(ue||!ud.user)return out({error:"Session expired."},401,origin);
  const db=createClient(URL,SERVICE,{auth:{persistSession:false}});
+ const {data:profile}=await db.from("profiles").select("account_status").eq("id",ud.user.id).maybeSingle();
+ if(!profile||profile.account_status!=="active")return out({error:"Your account is unavailable for staff access."},403,origin);
  let {data:role}=await db.from("user_roles").select("role").eq("user_id",ud.user.id).eq("role","super_admin").maybeSingle();
  if(!role){const {data:manager}=await db.from("user_roles").select("role").eq("user_id",ud.user.id).eq("role","content_manager").maybeSingle();role=manager;}
  if(!role)return out({error:"Staff permission required."},403,origin);
