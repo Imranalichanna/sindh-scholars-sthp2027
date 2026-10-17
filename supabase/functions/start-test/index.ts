@@ -41,10 +41,7 @@ Deno.serve(async (req) => {
   const { data: active } = await db.from("test_attempts").select("id,attempt_number,started_at").eq("test_id", test.id).eq("user_id", userData.user.id).eq("status", "in_progress").order("started_at", { ascending: false }).limit(1).maybeSingle();
   let attemptId = active?.id as string | undefined;
   let startedAt = active?.started_at as string | undefined;
-  if (active) {
-    const elapsed = Math.floor((now - Date.parse(active.started_at)) / 1000);
-    if (elapsed >= test.duration_seconds) return json({ error: "Your previous attempt has expired. Submit it or contact support if it was interrupted." }, 409, origin);
-  } else {
+  if (!active) {
     const { count, error: countError } = await db.from("test_attempts").select("id", { count: "exact", head: true }).eq("test_id", test.id).eq("user_id", userData.user.id).in("status", ["submitted", "expired", "in_progress"]);
     if (countError) return json({ error: "Could not verify attempt eligibility." }, 500, origin);
     if ((count ?? 0) >= test.max_attempts) return json({ error: "You have used all allowed attempts for this test." }, 403, origin);
