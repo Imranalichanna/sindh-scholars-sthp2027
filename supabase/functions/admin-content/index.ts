@@ -97,7 +97,7 @@ Deno.serve(async req=>{
    if(role.role!=="super_admin")return out({error:"Only a Super Admin can approve public result entries."},403,origin);
    if(!isUuid(b.attempt_id))return out({error:"A valid attempt ID is required."},400,origin);
    const {data:attempt}=await db.from("test_attempts").select("id,test_id,user_id,status,score,percentage,result_status,tests(result_policy,public_leaderboard_enabled)").eq("id",b.attempt_id).maybeSingle();
-   if(!attempt||!["submitted","expired"].includes(attempt.status)||attempt.score===null||attempt.percentage===null)return out({error:"This attempt has no finalized result to publish."},404,origin);
+   if(!attempt||!["submitted","expired"].includes(attempt.status)||attempt.result_status==="voided"||attempt.score===null||attempt.percentage===null)return out({error:"This attempt has no finalized result to publish."},404,origin);
    const test=Array.isArray(attempt.tests)?attempt.tests[0]:attempt.tests;
    if(test?.result_policy!=="public_results_after_approval"||test?.public_leaderboard_enabled!==true)return out({error:"This test is not configured for an enabled public leaderboard."},400,origin);
    const {data:profile}=await db.from("profiles").select("display_name").eq("id",attempt.user_id).maybeSingle();
