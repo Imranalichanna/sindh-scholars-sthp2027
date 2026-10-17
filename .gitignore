@@ -13,5 +13,7 @@ coverage/
 .DS_Store
 Thumbs.db
 # Keep private answer-key exports out of version control
+question-bank.json
+public/questions.json
 *.answer-key.json
 private-data/
