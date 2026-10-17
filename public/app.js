@@ -166,7 +166,7 @@
         const card=document.createElement("article");card.className="student-result-card";
         const title=document.createElement("h3");title.textContent=r.testTitle;
         const status=document.createElement("p");status.className="muted";status.textContent="Attempt "+r.attemptNumber+" · "+r.status+" · "+formatDate(r.submittedAt);
-        const score=document.createElement("p");score.className="student-result-score";score.textContent=r.resultVisible ? (r.result.score+" / marks · "+r.result.percentage+"%") : "Result hidden until authorized release";
+        const score=document.createElement("p");score.className="student-result-score";score.textContent=r.resultVisible ? (r.result.score+" / "+(r.result.totalMarks??"—")+" marks · "+r.result.percentage+"% · Correct: "+r.result.correctCount+" · Incorrect: "+r.result.incorrectCount+" · Unanswered: "+r.result.unansweredCount) : "Result hidden until authorized release";
         card.append(title,status,score);list.append(card);
       });
     } catch(e) { list.textContent = safeText(e.message,"Could not load your history. Please try again."); }
