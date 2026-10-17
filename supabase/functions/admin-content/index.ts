@@ -93,6 +93,21 @@ Deno.serve(async req=>{
    if(result.error)return out({error:"Could not save announcement. Check its publication dates."},400,origin);
    await audit("save_announcement","announcement",result.data.id,{title});return out({success:true,id:result.data.id},200,origin);
   }
+  if(b.action==="approvePublicResult") {
+   if(role.role!=="super_admin")return out({error:"Only a Super Admin can approve public result entries."},403,origin);
+   if(!isUuid(b.attempt_id))return out({error:"A valid attempt ID is required."},400,origin);
+   const {data:attempt}=await db.from("test_attempts").select("id,test_id,user_id,status,score,percentage,result_status,tests(result_policy)").eq("id",b.attempt_id).maybeSingle();
+   if(!attempt||!["submitted","expired"].includes(attempt.status)||attempt.score===null||attempt.percentage===null)return out({error:"This attempt has no finalized result to publish."},404,origin);
+   const test=Array.isArray(attempt.tests)?attempt.tests[0]:attempt.tests;
+   if(test?.result_policy!=="public_results_after_approval")return out({error:"This test is not configured for public results after approval."},400,origin);
+   const {data:profile}=await db.from("profiles").select("display_name").eq("id",attempt.user_id).maybeSingle();
+   const displayName=String(profile?.display_name??"Student").trim().slice(0,120)||"Student";
+   const {error:publishError}=await db.from("public_result_entries").upsert({test_id:attempt.test_id,attempt_id:attempt.id,display_name:displayName,score:attempt.score,percentage:attempt.percentage,is_published:true,published_at:new Date().toISOString(),approved_by:ud.user.id},{onConflict:"attempt_id"});
+   if(publishError)return out({error:"Could not approve this public result."},500,origin);
+   await db.from("test_attempts").update({result_status:"approved"}).eq("id",attempt.id);
+   await audit("approve_public_result","test_attempt",attempt.id,{test_id:attempt.test_id});
+   return out({success:true},200,origin);
+  }
   if(b.action==="setResultRelease") {
    if(role.role!=="super_admin")return out({error:"Only a Super Admin can release or unpublish results."},403,origin);
    if(!isUuid(b.test_id)||typeof b.released!=="boolean")return out({error:"Invalid result release request."},400,origin);
