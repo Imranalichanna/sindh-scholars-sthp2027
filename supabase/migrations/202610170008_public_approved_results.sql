@@ -22,6 +22,7 @@ using (
     where t.id = test_id
       and t.result_policy = 'public_results_after_approval'
       and t.results_released = true
+      and t.public_leaderboard_enabled = true
   )
 );
 revoke all on public.public_result_entries from anon, authenticated;
