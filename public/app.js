@@ -94,7 +94,7 @@
     if (!client) { renderTests(); renderMaterials(); return; }
     const [categories, tests, materials, announcements, settings] = await Promise.all([
       client.from("exam_categories").select("id,name,slug,description,sort_order").eq("is_published", true).order("sort_order"),
-      client.from("tests").select("id,title,slug,description,category_id,duration_seconds,total_marks,max_attempts,starts_at,closes_at,status").eq("status", "published").order("created_at", { ascending: false }),
+      client.from("tests").select("id,title,slug,description,instructions,syllabus,eligibility,category_id,duration_seconds,total_marks,max_attempts,starts_at,closes_at,status").eq("status", "published").order("created_at", { ascending: false }),
       client.from("study_materials").select("id,title,description,category_id,subject,resource_type,storage_path,external_url,created_at").eq("is_published", true).order("created_at", { ascending: false }),
       client.from("announcements").select("id,title,body,publish_at,created_at").eq("is_published", true).order("publish_at", { ascending: false }).limit(5),
       client.from("site_settings").select("key,value").eq("is_public", true)
@@ -174,6 +174,8 @@
   function updateAuthButton() { $("#open-auth").textContent = state.user ? "Signed in" : "Student login"; $("#open-auth").title = state.user ? "Signed in student account" : "Student login"; }
   async function startTest(test) {
     if (!client || !state.user) return openAuth("login");
+    const intro = "Start " + test.title + "?\\n\\nDuration: " + Math.round((test.duration_seconds || 0) / 60) + " minutes\\nTotal marks: " + (test.total_marks || "Calculated on publish") + "\\n\\n" + [test.instructions, test.eligibility ? "Eligibility: " + test.eligibility : "", test.syllabus ? "Syllabus: " + test.syllabus : ""].filter(Boolean).join("\\n\\n") + "\\n\\nThe timer starts after the server creates your attempt. Submit before time expires.";
+    if (!window.confirm(intro)) return;
     const btn = null;
     try {
       const { data, error } = await client.functions.invoke("start-test", { body: { testId: test.id } });
