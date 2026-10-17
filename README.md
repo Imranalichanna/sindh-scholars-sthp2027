@@ -23,7 +23,7 @@ The active development branch is [phase-1-foundation](https://github.com/Imranal
 - public/app.js and public/styles.css — public content, sign-in, test-taking, and student history interface
 - public/admin.html, public/admin.js, public/admin.css — staff workspace
 - public/config.js — public Supabase URL/key placeholders only; safe for a publishable/anon key when RLS is correctly configured
-- public/privacy.html and public/terms.html — policy drafts that require operator review
+- public/scholarships.html, public/contact.html, public/results.html, public/privacy.html, and public/terms.html — public information pages and policy drafts
 - supabase/migrations/ — relational schema, RLS policies, signup profile trigger, and atomic scoring RPC
 - supabase/functions/ — test start, answer autosave, secure submission, personal history, content management, admin results, and signed material URL functions
 - tests/ — automated validation scripts (expand before production)
@@ -45,7 +45,7 @@ Read SETUP.md for step-by-step Supabase configuration, secure first-admin setup,
 
 - The application has not been connected to your actual Supabase project or deployed from this branch to Cloudflare Pages.
 - No live authentication, database, Storage, or Edge Function request has been tested from this environment.
-- The staff workspace is an initial content-management MVP; question editing, bulk CSV import, role administration, public approved leaderboard, richer student profile editing, and full site-settings editor remain to be implemented.
+- The staff workspace is an initial content-management MVP; question editing, bulk CSV import, role administration UI, richer student profile editing, full site-settings editor, and complete test duplication/preview workflows remain to be implemented.
 - Automated end-to-end tests, rate limiting/bot protection, backups/restore rehearsal, privacy/legal review, accessibility audit, and penetration testing are still required.
 - The initial question builder supports four-option MCQs. Validate every question and answer before publication.
 
