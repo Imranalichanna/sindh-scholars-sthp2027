@@ -1,0 +1,32 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const URL = Deno.env.get("SUPABASE_URL")!;
+const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "";
+const cors = (o: string | null) => ({ "Access-Control-Allow-Origin": o === ALLOWED_ORIGIN ? o : ALLOWED_ORIGIN, "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS", "Vary": "Origin" });
+const response = (body: unknown, status: number, o: string | null) => new Response(JSON.stringify(body), { status, headers: { ...cors(o), "Content-Type": "application/json", "Cache-Control": "no-store" } });
+Deno.serve(async req => {
+  const origin = req.headers.get("origin");
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors(origin) });
+  if (req.method !== "POST") return response({ error: "Method not allowed." }, 405, origin);
+  if (!origin || origin !== ALLOWED_ORIGIN) return response({ error: "Origin not allowed." }, 403, origin);
+  const authorization = req.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ")) return response({ error: "Sign in required." }, 401, origin);
+  let body: { attemptId?: string; questionId?: string; selectedOptionIndex?: number | null };
+  try { body = await req.json(); } catch { return response({ error: "Invalid request." }, 400, origin); }
+  if (!body.attemptId || !body.questionId || !(body.selectedOptionIndex === null || Number.isInteger(body.selectedOptionIndex))) return response({ error: "Invalid answer data." }, 400, origin);
+  const auth = createClient(URL, ANON, { global: { headers: { Authorization: authorization } }, auth: { persistSession: false } });
+  const { data: ud, error: ue } = await auth.auth.getUser();
+  if (ue || !ud.user) return response({ error: "Session expired." }, 401, origin);
+  const db = createClient(URL, SERVICE, { auth: { persistSession: false } });
+  const { data: attempt } = await db.from("test_attempts").select("id,test_id,user_id,status,started_at").eq("id", body.attemptId).maybeSingle();
+  if (!attempt || attempt.user_id !== ud.user.id || attempt.status !== "in_progress") return response({ error: "Attempt is unavailable." }, 403, origin);
+  const { data: test } = await db.from("tests").select("duration_seconds").eq("id", attempt.test_id).single();
+  if (!test || Date.now() - Date.parse(attempt.started_at) >= test.duration_seconds * 1000) return response({ error: "Test time has expired." }, 409, origin);
+  const { data: q } = await db.from("questions").select("id,options").eq("id", body.questionId).eq("test_id", attempt.test_id).eq("is_active", true).maybeSingle();
+  if (!q) return response({ error: "Question is not part of this test." }, 400, origin);
+  if (body.selectedOptionIndex !== null && (body.selectedOptionIndex! < 0 || body.selectedOptionIndex! >= q.options.length)) return response({ error: "Selected option is invalid." }, 400, origin);
+  const { error } = await db.from("submitted_answers").upsert({ attempt_id: attempt.id, question_id: q.id, selected_option_index: body.selectedOptionIndex, is_correct: null, awarded_marks: null }, { onConflict: "attempt_id,question_id" });
+  if (error) return response({ error: "Could not save this answer. Please retry." }, 500, origin);
+  return response({ success: true }, 200, origin);
+});
