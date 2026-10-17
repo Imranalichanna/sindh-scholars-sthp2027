@@ -1,0 +1,28 @@
+name: Validate platform foundation
+on:
+  push:
+    branches: [main, phase-1-foundation]
+  pull_request:
+    branches: [main]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm run check
+      - run: npm test
+      - name: Type-check Supabase Edge Functions
+        run: |
+          deno check supabase/functions/start-test/index.ts
+          deno check supabase/functions/save-progress/index.ts
+          deno check supabase/functions/submit-test/index.ts
+          deno check supabase/functions/my-results/index.ts
+          deno check supabase/functions/admin-results/index.ts
+          deno check supabase/functions/admin-content/index.ts
+          deno check supabase/functions/material-url/index.ts

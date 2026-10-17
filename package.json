@@ -1,0 +1,13 @@
+{
+  "name": "sindh-scholars-academy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static frontend and Supabase backend for Sindh Scholars Academy",
+  "scripts": {
+    "check": "node --check public/app.js && node --check public/admin.js && node --check public/contact.js && node --check public/results.js",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
