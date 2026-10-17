@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(10);
+select plan(13);
 
 select ok((select relrowsecurity from pg_class where oid='public.profiles'::regclass), 'profiles has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid='public.test_attempts'::regclass), 'attempts has RLS enabled');
