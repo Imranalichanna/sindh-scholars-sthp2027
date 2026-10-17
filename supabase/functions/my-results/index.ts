@@ -13,12 +13,12 @@ Deno.serve(async req => {
   const {data:ud,error:ue}=await auth.auth.getUser();
   if(ue||!ud.user)return out({error:"Session expired."},401,origin);
   const db=createClient(URL,SERVICE,{auth:{persistSession:false}});
-  const {data:rows,error}=await db.from("test_attempts").select("id,test_id,attempt_number,status,started_at,submitted_at,duration_seconds,score,percentage,correct_count,incorrect_count,unanswered_count,result_status,tests(id,title,result_policy,results_released)").eq("user_id",ud.user.id).order("created_at",{ascending:false}).limit(100);
+  const {data:rows,error}=await db.from("test_attempts").select("id,test_id,attempt_number,status,started_at,submitted_at,duration_seconds,score,percentage,correct_count,incorrect_count,unanswered_count,result_status,tests(id,title,total_marks,result_policy,results_released)").eq("user_id",ud.user.id).order("created_at",{ascending:false}).limit(100);
   if(error)return out({error:"Could not load your test history."},500,origin);
   const results=(rows??[]).map(a=>{
     const t=Array.isArray(a.tests)?a.tests[0]:a.tests;
     const visible=!!t?.results_released;
-    return {attemptId:a.id,testId:a.test_id,testTitle:t?.title??"Practice test",attemptNumber:a.attempt_number,status:a.status,startedAt:a.started_at,submittedAt:a.submitted_at,durationSeconds:a.duration_seconds,resultVisible:visible,result:visible?{score:a.score,percentage:a.percentage,correctCount:a.correct_count,incorrectCount:a.incorrect_count,unansweredCount:a.unanswered_count}:null};
+    return {attemptId:a.id,testId:a.test_id,testTitle:t?.title??"Practice test",attemptNumber:a.attempt_number,status:a.status,startedAt:a.started_at,submittedAt:a.submitted_at,durationSeconds:a.duration_seconds,resultVisible:visible,result:visible?{score:a.score,totalMarks:t?.total_marks??null,percentage:a.percentage,correctCount:a.correct_count,incorrectCount:a.incorrect_count,unansweredCount:a.unanswered_count}:null};
   });
   return out({results},200,origin);
 });
