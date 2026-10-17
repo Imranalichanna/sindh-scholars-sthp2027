@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(18);
 
 select ok((select relrowsecurity from pg_class where oid='public.profiles'::regclass), 'profiles has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid='public.test_attempts'::regclass), 'attempts has RLS enabled');
@@ -26,8 +26,8 @@ insert into public.exam_categories(id,slug,name,is_published)
 values ('e2000000-0000-4000-8000-000000000001','ssa-test-category','SSA Test Category',true)
 on conflict (id) do nothing;
 
-insert into public.tests(id,category_id,title,slug,duration_seconds,total_marks,negative_marking,negative_penalty,max_attempts,status,results_released)
-values ('e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','SSA scoring integration test','ssa-scoring-integration-test',3600,2,true,0.25,1,'published',false)
+insert into public.tests(id,category_id,title,slug,duration_seconds,total_marks,negative_marking,negative_penalty,max_attempts,status,results_released,result_policy,public_leaderboard_enabled)
+values ('e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','SSA scoring integration test','ssa-scoring-integration-test',3600,2,true,0.25,1,'published',false,'public_results_after_approval',true)
 on conflict (id) do nothing;
 
 insert into public.questions(id,test_id,statement,options,marks,position)
@@ -55,8 +55,21 @@ select public.submit_test_attempt(
 select is((select (result->>'score')::numeric from ssa_eval_result),0.75::numeric,'server scoring applies the configured negative penalty');
 select is((select (result->>'correctCount')::integer from ssa_eval_result),1,'server counts correct answers');
 select is((select (result->>'incorrectCount')::integer from ssa_eval_result),1,'server counts incorrect answers');
+insert into public.public_result_entries(test_id,attempt_id,display_name,score,percentage,is_published,published_at)
+values ('e3000000-0000-4000-8000-000000000001','e5000000-0000-4000-8000-000000000001','Public Test Student',0.75,37.5,true,now())
+on conflict (attempt_id) do update set is_published=true;
+
+set local role anon;
+select is((select count(*)::integer from public.public_result_entries where attempt_id='e5000000-0000-4000-8000-000000000001'),0,'public result entries stay hidden until release');
+reset role;
+update public.tests set results_released=true where id='e3000000-0000-4000-8000-000000000001';
+set local role anon;
+select is((select count(*)::integer from public.public_result_entries where attempt_id='e5000000-0000-4000-8000-000000000001'),1,'only approved public entries become visible after release');
+reset role;
+update public.tests set results_released=false where id='e3000000-0000-4000-8000-000000000001';
+
 select throws_ok(
- $$select public.submit_test_attempt(
+ $select public.submit_test_attempt(
  'e5000000-0000-4000-8000-000000000001',
  'e1000000-0000-4000-8000-000000000001',
  '[]'::jsonb,
