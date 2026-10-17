@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(16);
 
 select ok((select relrowsecurity from pg_class where oid='public.profiles'::regclass), 'profiles has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid='public.test_attempts'::regclass), 'attempts has RLS enabled');
@@ -11,6 +11,9 @@ select ok(not has_table_privilege('anon','public.question_answer_keys','SELECT')
 select ok(not has_table_privilege('authenticated','public.question_answer_keys','SELECT'), 'students cannot select answer keys directly');
 select ok(not has_table_privilege('authenticated','public.test_attempts','INSERT'), 'students cannot create trusted attempt records directly');
 select ok(not has_table_privilege('authenticated','public.submitted_answers','INSERT'), 'students cannot insert scored answer records directly');
+select ok(not has_table_privilege('authenticated','public.public_result_entries','INSERT'), 'students cannot create public result entries directly');
+select ok(has_column_privilege('anon','public.public_result_entries','display_name','SELECT'), 'anonymous visitors can read only intentionally exposed public names');
+select ok(not has_column_privilege('anon','public.public_result_entries','attempt_id','SELECT'), 'anonymous visitors cannot read private attempt identifiers');
 select ok(has_function_privilege('service_role','public.submit_test_attempt(uuid,uuid,jsonb,boolean)','EXECUTE'), 'service role can call trusted scoring RPC');
 select ok(not has_function_privilege('authenticated','public.submit_test_attempt(uuid,uuid,jsonb,boolean)','EXECUTE'), 'browser-authenticated users cannot call trusted scoring RPC');
 
