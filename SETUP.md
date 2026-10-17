@@ -6,6 +6,16 @@ This branch contains an initial functional foundation, but it has not been conne
 
 **Important repository warning:** the GitHub repository was observed with public visibility, and the former root question-bank.json included answer keys. The file has been deleted from the current main and development branch heads, but the prior commit remains in history. Make the repository private now, then follow GitHub's guidance for removing sensitive content from history if you need to prevent retrieval from old commits. Do not commit question answer keys again.
 
+## Immediate security action: repository visibility and history
+
+The repository was observed as public while its root question-bank.json contained answer indices. The file has been deleted from the current main and development branch heads, but older commits may still contain it.
+
+1. Open the repository on GitHub.
+2. Go to Settings → General → Danger Zone → Change repository visibility → Change to private.
+3. Confirm the visibility change. Reconnect or re-authorize the Cloudflare GitHub App for this private repository if deployments stop.
+4. Before publishing real exam content, arrange a controlled Git-history rewrite to remove question-bank.json from all affected branches/tags. Back up the repository first; rewriting history changes commit IDs and affects every collaborator and open pull request. After the rewrite, force-push the cleaned branches/tags and ask GitHub Support about purging cached sensitive file views if needed.
+5. Do not add answer keys to any public repository path again. Keep the correct-answer records in the protected Supabase table.
+
 ## 1. Prerequisites
 
 - GitHub account and repository access
