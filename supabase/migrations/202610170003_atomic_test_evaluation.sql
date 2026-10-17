@@ -95,6 +95,9 @@ begin
   end loop;
 
   if q_count = 0 then raise exception 'test_has_no_answerable_questions' using errcode = '22023'; end if;
+  if q_count <> (select count(*) from public.questions where test_id = a.test_id and is_active) then
+    raise exception 'answer_key_missing_for_question' using errcode = '22023';
+  end if;
   earned := greatest(0, earned);
   if possible > 0 then pct := round((earned / possible) * 100, 2); end if;
 
