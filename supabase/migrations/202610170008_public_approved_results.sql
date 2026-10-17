@@ -25,4 +25,4 @@ using (
   )
 );
 revoke all on public.public_result_entries from anon, authenticated;
-grant select (id, test_id, display_name, score, percentage, published_at) on public.public_result_entries to anon, authenticated;
+grant select (id, test_id, display_name, score, percentage, published_at, is_published) on public.public_result_entries to anon, authenticated;
