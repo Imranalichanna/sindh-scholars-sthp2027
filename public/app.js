@@ -153,7 +153,7 @@
   function updateAuthButton() { $("#open-auth").textContent = state.user ? "Signed in" : "Student login"; $("#open-auth").title = state.user ? "Signed in student account" : "Student login"; }
   async function startTest(test) {
     if (!client || !state.user) return openAuth("login");
-    const btn = event?.currentTarget; if (btn) btn.disabled = true;
+    const btn = null;
     try {
       const { data, error } = await client.functions.invoke("start-test", { body: { testId: test.id } });
       if (error || !data?.attemptId || !Array.isArray(data.questions)) throw new Error(data?.error || error?.message || "Test could not be started.");
@@ -191,7 +191,7 @@
         label.append(radio, document.createTextNode(" " + option)); field.append(label);
       });
       form.append(field);
-      const b = document.createElement("button"); b.type = "button"; b.className = "question-jump" + (state.answers[q.id] !== undefined ? " answered" : ""); b.textContent = String(index + 1); b.setAttribute("aria-label", "Go to question " + (index + 1)); b.addEventListener("click", () => field.scrollIntoView({ behavior: "smooth", block: "start" }); nav.append(b);
+      const b = document.createElement("button"); b.type = "button"; b.className = "question-jump" + (state.answers[q.id] !== undefined ? " answered" : ""); b.textContent = String(index + 1); b.setAttribute("aria-label", "Go to question " + (index + 1)); b.addEventListener("click", () => field.scrollIntoView({ behavior: "smooth", block: "start" })); nav.append(b);
     });
     const navLabel = document.createElement("p"); navLabel.textContent = "Question navigation · Green numbers are answered"; navLabel.className = "muted"; content.append(navLabel, nav, form);
     const footer = document.createElement("div"); footer.className = "exam-footer";
