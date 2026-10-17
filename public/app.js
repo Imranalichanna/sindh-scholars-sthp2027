@@ -136,10 +136,6 @@
       if (state.mode === "signup") {
         const { data, error } = await client.auth.signUp({ email, password, options: { data: { display_name: name } } });
         if (error) throw error;
-        if (data.user && data.session) {
-          const { error: profileError } = await client.from("profiles").upsert({ id: data.user.id, display_name: name }, { onConflict: "id" });
-          if (profileError) throw profileError;
-        }
         $("#auth-message").textContent = data.session ? "Account created. You can start practising." : "Check your email to confirm your account, then log in.";
         if (data.session) { state.user = data.user; $("#auth-dialog").close(); updateAuthButton(); renderTests(); toast("Welcome to Sindh Scholars Academy!"); }
       } else {
