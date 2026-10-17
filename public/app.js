@@ -186,8 +186,8 @@
       q.options.forEach((option, oi) => {
         const label = document.createElement("label"); label.className = "option-label";
         const radio = document.createElement("input"); radio.type = "radio"; radio.name = q.id; radio.value = String(oi);
-        radio.checked = Number(state.answers[q.id]) === oi;
-        radio.addEventListener("change", () => { state.answers[q.id] = oi; button.classList.add("answered"); });
+        radio.checked = q.optionMap ? state.answers[q.id] === q.optionMap[oi] : Number(state.answers[q.id]) === oi;
+        radio.addEventListener("change", async () => { const originalIndex = q.optionMap ? q.optionMap[oi] : oi; state.answers[q.id] = originalIndex; updateExamProgress(); const { error } = await client.functions.invoke("save-progress", { body: { attemptId: state.activeAttempt.attemptId, questionId: q.id, selectedOptionIndex: originalIndex } }); if (error) toast("Answer not saved yet. Check your connection and select again."); });
         label.append(radio, document.createTextNode(" " + option)); field.append(label);
       });
       form.append(field);
