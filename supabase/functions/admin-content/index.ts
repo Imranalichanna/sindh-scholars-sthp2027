@@ -15,7 +15,8 @@ Deno.serve(async req=>{
  const {data:ud,error:ue}=await auth.auth.getUser();
  if(ue||!ud.user)return out({error:"Session expired."},401,origin);
  const db=createClient(URL,SERVICE,{auth:{persistSession:false}});
- const {data:role}=await db.from("user_roles").select("role").eq("user_id",ud.user.id).in("role",["super_admin","content_manager"]).limit(1).maybeSingle();
+ let {data:role}=await db.from("user_roles").select("role").eq("user_id",ud.user.id).eq("role","super_admin").maybeSingle();
+ if(!role){const {data:manager}=await db.from("user_roles").select("role").eq("user_id",ud.user.id).eq("role","content_manager").maybeSingle();role=manager;}
  if(!role)return out({error:"Staff permission required."},403,origin);
  const audit=async(action:string,entity:string,id:string|null,metadata={})=>{await db.from("admin_activity_logs").insert({actor_id:ud.user.id,action,entity_type:entity,entity_id:id,metadata})};
  try {
