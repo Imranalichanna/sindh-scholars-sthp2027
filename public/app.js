@@ -250,7 +250,7 @@
     } catch (e) {
       toast(safeText(e.message, "Submission failed. Your attempt is still open; reconnect and retry."));
       if (submit) { submit.disabled = false; submit.textContent = "Retry submission"; }
-      if (timedOut) state.remaining = 5;
+      if (timedOut) { state.remaining = 5; startTimer(); }
     }
   }
   $("#test-search").addEventListener("input", renderTests); $("#test-filter").addEventListener("change", renderTests);
