@@ -26,7 +26,7 @@ test("database migrations enable RLS and keep answer keys out of browser grants"
   const migrations = readdirSync(migrationsDir).filter(n => n.endsWith(".sql")).sort();
   assert.ok(migrations.length >= 3, "expected schema, hardening, and scoring migrations");
   const sql = migrations.map(n => readFileSync(join(migrationsDir, n), "utf8")).join("\n");
-  for (const table of ["profiles", "user_roles", "tests", "questions", "question_answer_keys", "test_attempts", "submitted_answers", "study_materials", "announcements"]) {
+  for (const table of ["profiles", "user_roles", "tests", "questions", "question_answer_keys", "test_attempts", "submitted_answers", "study_materials", "announcements", "public_result_entries"]) {
     assert.match(sql, new RegExp("alter table public\\." + table + " enable row level security", "i"), table + " must enable RLS");
   }
   assert.match(sql, /revoke all on public\.question_answer_keys from anon, authenticated/i);
