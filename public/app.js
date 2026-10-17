@@ -9,7 +9,7 @@
   const $ = (selector) => document.querySelector(selector);
   const state = { mode: "login", categories: [], tests: [], materials: [], announcements: [], user: null, activeAttempt: null, timerId: null, remaining: 0, answers: {} };
   $("#year").textContent = new Date().getFullYear();
-  if (cfg.whatsappCommunityUrl && /^https:\/\/i.test(cfg.whatsappCommunityUrl)) $("#community-link").href = cfg.whatsappCommunityUrl;
+  if (cfg.whatsappCommunityUrl && /^https:\/\//i.test(cfg.whatsappCommunityUrl)) $("#community-link").href = cfg.whatsappCommunityUrl;
   else $("#community-link").addEventListener("click", (e) => { e.preventDefault(); toast("The academy community link has not been configured yet."); });
 
   function toast(message) {
@@ -70,7 +70,7 @@
       card.append(badge, h, p);
       const button = document.createElement("button"); button.className = "btn"; button.textContent = "Open resource ↗";
       button.addEventListener("click", async () => {
-        if (m.external_url && /^https:\/\/i.test(m.external_url)) window.open(m.external_url, "_blank", "noopener,noreferrer");
+        if (m.external_url && /^https:\/\//i.test(m.external_url)) window.open(m.external_url, "_blank", "noopener,noreferrer");
         else if (client && m.storage_path) {
           const { data, error } = await client.functions.invoke("material-url", { body: { materialId: m.id } });
           if (error || !data?.url) toast("Could not open this file. Please try again later.");
@@ -107,7 +107,7 @@
       if (s.key === "announcement_banner" && typeof s.value?.text === "string" && s.value.text.trim()) {
         const banner = $("#announcement-bar"); banner.textContent = s.value.text; banner.classList.remove("hidden");
       }
-      if (s.key === "whatsapp_community_url" && typeof s.value?.url === "string" && /^https:\/\/i.test(s.value.url)) $("#community-link").href = s.value.url;
+      if (s.key === "whatsapp_community_url" && typeof s.value?.url === "string" && /^https:\/\//i.test(s.value.url)) $("#community-link").href = s.value.url;
     });
     renderCategories(); renderTests(); renderMaterials(); renderAnnouncements();
     if (categories.error || tests.error || materials.error || announcements.error) console.warn("Some published content could not be loaded. Check Supabase schema, RLS, and configuration.");
