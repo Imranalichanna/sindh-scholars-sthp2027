@@ -45,6 +45,7 @@ Deno.serve(async req=>{
    if(title.length<1||title.length>180||!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)||!Number.isInteger(duration)||duration<60||duration>86400||!Number.isFinite(marks)||marks<0||!Number.isInteger(attempts)||attempts<1||attempts>100)return out({error:"Review the test title, slug, duration, marks, and attempt limit."},400,origin);
    if(b.category_id&&!isUuid(b.category_id))return out({error:"Invalid category."},400,origin);
    const row={title,slug,description:String(b.description??"").slice(0,5000),instructions:String(b.instructions??"").slice(0,10000),syllabus:String(b.syllabus??"").slice(0,10000),eligibility:String(b.eligibility??"").slice(0,5000),category_id:b.category_id||null,duration_seconds:duration,total_marks:marks,max_attempts:attempts,negative_marking:b.negative_marking===true,negative_penalty:Math.max(0,Number(b.negative_penalty)||0),starts_at:b.starts_at||null,closes_at:b.closes_at||null,result_policy:["admin_only_until_release","personal_result","public_results_after_approval"].includes(b.result_policy)?b.result_policy:"admin_only_until_release",question_order_randomized:b.question_order_randomized!==false,option_order_randomized:b.option_order_randomized!==false,updated_at:new Date().toISOString()};
+   if(b.id&&isUuid(b.id)){const {data:existing}=await db.from("tests").select("id,status").eq("id",b.id).maybeSingle();if(!existing)return out({error:"Test not found."},404,origin);if(existing.status!=="draft")return out({error:"Only draft tests can be edited. Create a new test to change a published assessment."},409,origin);}
    const result=b.id&&isUuid(b.id)?await db.from("tests").update(row).eq("id",b.id).select("id").single():await db.from("tests").insert({...row,status:"draft",created_by:ud.user.id}).select("id").single();
    if(result.error)return out({error:"Could not save test. Ensure its slug is unique and date range is valid."},400,origin);
    await audit("save_test","test",result.data.id,{title});return out({success:true,id:result.data.id},200,origin);
@@ -54,7 +55,8 @@ Deno.serve(async req=>{
    const statement=String(b.statement??"").trim(),options=b.options;
    if(statement.length<1||statement.length>10000||!Array.isArray(options)||options.length<2||options.length>10||options.some((v:unknown)=>typeof v!=="string"||!v.trim()||v.length>1000)||!Number.isInteger(b.correct_option_index)||b.correct_option_index<0||b.correct_option_index>=options.length)return out({error:"Enter a question, 2–10 valid options, and select the correct option."},400,origin);
    const {data:test}=await db.from("tests").select("id,status").eq("id",b.test_id).maybeSingle();
-   if(!test||test.status==="archived")return out({error:"This test cannot accept questions."},404,origin);
+   if(!test)return out({error:"Test not found."},404,origin);
+   if(test.status!=="draft")return out({error:"Questions can only be changed while the test is a draft. Published assessments are locked to protect existing attempts."},409,origin);
    const row={test_id:b.test_id,statement,options,explanation:String(b.explanation??"").slice(0,5000)||null,subject:String(b.subject??"").slice(0,100)||null,topic:String(b.topic??"").slice(0,100)||null,difficulty:["easy","medium","hard"].includes(b.difficulty)?b.difficulty:"medium",marks:Math.max(0,Number(b.marks)||1),position:Number.isInteger(b.position)?b.position:0,is_active:b.is_active!==false,updated_at:new Date().toISOString()};
    const saved=b.id&&isUuid(b.id)?await db.from("questions").update(row).eq("id",b.id).select("id").single():await db.from("questions").insert(row).select("id").single();
    if(saved.error)return out({error:"Could not save question."},400,origin);
@@ -66,6 +68,7 @@ Deno.serve(async req=>{
    if(!isUuid(b.test_id))return out({error:"Select a valid test."},400,origin);
    const {data:test}=await db.from("tests").select("id,status").eq("id",b.test_id).maybeSingle();
    if(!test)return out({error:"Test not found."},404,origin);
+   if(test.status!=="draft")return out({error:"Only draft tests can be published. Close or archive the existing assessment instead."},409,origin);
    const {data:qs,error:qError}=await db.from("questions").select("id,options,marks").eq("test_id",b.test_id).eq("is_active",true);
    if(qError||!qs?.length)return out({error:"Add active questions before publishing."},400,origin);
    const {data:keys,error:kError}=await db.from("question_answer_keys").select("question_id").in("question_id",qs.map(q=>q.id));
